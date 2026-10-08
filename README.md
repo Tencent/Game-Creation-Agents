@@ -29,7 +29,7 @@ The complete creation flow is:
 
 # 📰 News
 
-- **[2026-07-16]** We are pleased to announce the initial public release of
+- **[2026-10-12]** We are pleased to announce the initial public release of
   **Game-Creation-Agents (GCA)**, an end-to-end agentic pipeline for designing,
   building, and verifying playable browser games.
 
@@ -296,6 +296,5 @@ If you find GCA helpful, please cite:
   author      = {{Multimodal Reinforcement Learning Team, Tencent}},
   institution = {Tencent},
   year        = {2026},
-  url         = {https://github.com/harnessRL/gca}
 }
 ```
