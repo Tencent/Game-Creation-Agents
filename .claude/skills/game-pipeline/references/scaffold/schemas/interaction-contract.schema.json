@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gca.harnessrl.dev/schemas/interaction-contract.json",
+  "title": "GCA Interaction Contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "genre",
+    "interaction_profile",
+    "scheme",
+    "canvas",
+    "gameContext",
+    "actions",
+    "world",
+    "layers",
+    "entities",
+    "matrix"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "genre": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "beat_em_up",
+        "bullet_hell",
+        "roguelike",
+        "puzzle",
+        "tower_defence",
+        "sandbox",
+        "simulation",
+        "card",
+        "idle",
+        "custom"
+      ]
+    },
+    "interaction_profile": {
+      "type": "string",
+      "enum": ["arcade-gravity", "arcade-no-gravity", "matter", "none"]
+    },
+    "scheme": { "type": "string", "minLength": 1 },
+    "canvas": {
+      "type": "object",
+      "required": ["designWidth", "designHeight"],
+      "additionalProperties": false,
+      "properties": {
+        "designWidth": { "type": "integer", "minimum": 1 },
+        "designHeight": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "gameContext": { "type": "string", "minLength": 1 },
+    "player": { "type": ["object", "string", "array"] },
+    "actions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["primitive"],
+        "properties": {
+          "primitive": { "type": "string", "minLength": 1 },
+          "key": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "effect": { "type": "string", "minLength": 1 },
+          "cooldown_ms": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "world": { "type": "object" },
+    "layers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["layer", "body", "shape", "fit"],
+        "properties": {
+          "layer": { "type": "string", "minLength": 1 },
+          "body": {
+            "type": "string",
+            "enum": ["dynamic", "static", "kinematic", "sensor", "none"]
+          },
+          "shape": { "type": "string", "enum": ["rect", "circle"] },
+          "fit": { "type": "string", "enum": ["bbox"] },
+          "oneway": { "type": "boolean" },
+          "min_hit_px": { "type": "number", "minimum": 1 }
+        }
+      }
+    },
+    "matrix": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

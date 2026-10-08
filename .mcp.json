@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "gca": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "./gca-mcp",
+        "run",
+        "gca-mcp"
+      ]
+    }
+  }
+}

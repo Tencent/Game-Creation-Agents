@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gca.harnessrl.dev/schemas/asset-manifest.json",
+  "title": "GCA Asset Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "qualityProfile",
+    "fileAssetsRequired",
+    "runtimeSources",
+    "assets"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [2] },
+    "qualityProfile": {
+      "type": "string",
+      "enum": ["art_directed", "responsive", "pixel_art", "minimal"]
+    },
+    "fileAssetsRequired": { "type": "boolean" },
+    "runtimeSources": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "enum": ["procedural", "live-text", "composition"]
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "category",
+          "sourceStrategy",
+          "path",
+          "description"
+        ],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "minLength": 1 },
+          "sourceStrategy": {
+            "type": "string",
+            "enum": ["generated-image", "supplied-image", "licensed-image"]
+          },
+          "textureKey": { "type": "string", "minLength": 1 },
+          "layout": { "type": "string", "enum": ["per-action", "combined"] },
+          "defaultAction": { "type": "string", "minLength": 1 },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[.][pP][nN][gG]$"
+          },
+          "metadata": { "type": "string", "minLength": 1 },
+          "frameWidth": { "type": "integer", "minimum": 1 },
+          "frameHeight": { "type": "integer", "minimum": 1 },
+          "actions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["textureKey", "path", "metadata"],
+              "additionalProperties": false,
+              "properties": {
+                "textureKey": { "type": "string", "minLength": 1 },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "[.][pP][nN][gG]$"
+                },
+                "metadata": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "placeholder": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "targetWidth": { "type": "integer", "minimum": 1 },
+          "targetHeight": { "type": "integer", "minimum": 1 },
+          "maxBox": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "logicalBox": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "baseSize": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "integerScales": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "value_less": { "type": "boolean" },
+          "anchors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "binds", "xPct", "yPct"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "binds": { "type": "string", "minLength": 1 },
+                "xPct": { "type": "number", "minimum": 0, "maximum": 1 },
+                "yPct": { "type": "number", "minimum": 0, "maximum": 1 },
+                "fontPct": { "type": "number", "exclusiveMinimum": 0 },
+                "maxWidthPct": { "type": "number", "exclusiveMinimum": 0 },
+                "maxHeightPct": { "type": "number", "exclusiveMinimum": 0 },
+                "align": { "type": "string", "enum": ["left", "center", "right"] }
+              }
+            }
+          },
+          "slots": { "type": ["object", "array"] },
+          "provenance": { "type": "object" },
+          "terrain_only": { "type": "boolean" },
+          "decorative": { "type": "boolean" },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
+          "bbox": { "type": "object" },
+          "cells": { "type": "array" }
+        }
+      }
+    }
+  }
+}

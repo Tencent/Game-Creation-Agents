@@ -1,0 +1,35 @@
+schema_version = 1
+
+[node]
+minimum_major = 20
+
+[[system_dependencies]]
+name = "git"
+binaries = ["git"]
+severity = "blocker"
+macos_package = "git"
+linux_package = "git"
+hint = "Install git."
+
+[[system_dependencies]]
+name = "curl"
+binaries = ["curl"]
+severity = "blocker"
+macos_package = "curl"
+linux_package = "curl"
+hint = "Install curl; the verification model client invokes it directly."
+
+[[system_dependencies]]
+name = "ffmpeg"
+binaries = ["ffmpeg", "ffprobe"]
+severity = "blocker"
+macos_package = "ffmpeg"
+linux_package = "ffmpeg"
+hint = "Install ffmpeg; the package must provide both ffmpeg and ffprobe."
+
+[[system_dependencies]]
+name = "uv"
+binaries = ["uv"]
+severity = "blocker"
+macos_package = "uv"
+hint = "Install uv from https://docs.astral.sh/uv/getting-started/installation/."

@@ -1,0 +1,317 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gca.harnessrl.dev/schemas/level.json",
+  "title": "GCA Level DSL",
+  "description": "Declarative description of a single playable level. Consumed by implement-agent's LevelLoader.",
+  "type": "object",
+  "required": ["level_id", "genre", "length", "win_condition", "lose_condition"],
+  "additionalProperties": false,
+  "if": {
+    "properties": { "genre": { "enum": ["tower_defence"] } },
+    "required": ["genre"]
+  },
+  "then": {
+    "properties": {
+      "spawns": {
+        "items": { "required": ["type", "path", "wave"] }
+      }
+    }
+  },
+
+  "properties": {
+    "level_id":   { "type": "string", "pattern": "^stage_[0-9]+$",
+                    "description": "Pipeline stage id matching its levels/stage_N.json filename, e.g. 'stage_1'." },
+    "name":       { "type": "string", "description": "Human-readable level name." },
+    "genre":      { "type": "string",
+                    "enum": ["platform", "beat_em_up", "bullet_hell", "roguelike", "puzzle", "tower_defence", "sandbox", "simulation", "card", "idle", "custom"],
+                    "description": "Schema applicability is determined solely by LEVEL_MODEL=authored; genre must not disable the authored-level contract." },
+    "difficulty": { "type": "string", "enum": ["easy", "normal", "hard", "extreme"] },
+
+    "next_level": {
+      "type": ["string", "null"],
+      "description": "Sequential progression: id of the level to load on win_condition. null (or omit) means this is the final stage; on win, go to ending. Required on every non-final stage in sequential mode (the default)."
+    },
+    "unlock_mode": {
+      "type": "string",
+      "enum": ["sequential", "open"],
+      "default": "sequential",
+      "description": "Stage selection model. 'sequential' (default): player must beat stage_{N-1} to access stage_N; a Level-Select UI may re-enter cleared stages. 'open': all stages selectable from TitleScene (opt-in, only when the user prompt explicitly says 'open world / any order / non-linear'). Must match across all levels of the same game."
+    },
+
+    "scroll": {
+      "type": "object",
+      "description": "Camera / world scrolling. Optional; absent => static level.",
+      "properties": {
+        "mode":  { "type": "string", "enum": ["auto", "player_follow", "static"] },
+        "speed": { "type": "number", "minimum": 0,
+                   "description": "Auto-scroll: pixels/sec. player_follow: max camera pan speed. static: ignored." },
+        "axis":  { "type": "string", "enum": ["x", "y", "both"], "default": "x" }
+      },
+      "additionalProperties": false
+    },
+
+    "length": {
+      "type": "number",
+      "minimum": 0,
+      "description": "World length along scroll axis in pixels (or grid cells for grid-based genres). 0 = single-screen arena."
+    },
+
+    "content": {
+      "type": "object",
+      "description": "Structured genre-specific authored payload not represented by `terrain` or `spawns`. Puzzle, card, and idle stages require this envelope. `kind` selects the GDD-authored consumer and non-empty `data` supplies its inputs; the canonical schema plus the GDD are the only authorities.",
+      "required": ["kind", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "data": { "type": "object" }
+      }
+    },
+
+    "terrain": {
+      "type": "array",
+      "description": "Ordered list of terrain chunks. implement-agent must support each `chunk` id via its prefab library.",
+      "items": {
+        "type": "object",
+        "required": ["chunk", "x", "width"],
+        "if": {
+          "properties": { "chunk": { "enum": ["pit", "gap", "trench"] } },
+          "required": ["chunk"]
+        },
+        "else": { "required": ["height"] },
+        "additionalProperties": false,
+        "properties": {
+          "chunk":  { "type": "string",
+                      "enum": [
+                        "flat_ground", "raised_ground", "high_platform", "floating_platform",
+                        "oneway_platform", "ramp_up", "ramp_down",
+                        "wall", "ceiling", "bridge", "broken_bridge",
+                        "pit", "gap", "trench", "water",
+                        "moving_platform", "boss_arena", "start_pad", "goal"
+                      ],
+                      "description": "Prefab id from the canonical terrain vocabulary — each maps to a defined collision shape that implement-agent must build (gatePrefabCoverage blocks any used chunk with no builder in src/). Collision semantics are defined in references/level-design/terrain-prefabs.md: solid chunks use full axis-aligned rectangles; oneway_platform uses a dedicated top-only body; ramps use stair-step AABBs or an explicit ground post-process; gaps create no body; moving_platform is kinematic and carries riders; water and markers are sensors. Need a bespoke shape? Add it here AND to terrain-prefabs.md AND give it a builder — do not invent an unbuilt id." },
+          "x":      { "type": "number", "description": "World x of the chunk's left edge." },
+          "y":      { "type": "number", "description": "World y of the chunk's top edge (optional only when the assembler has an authored ground-level default)." },
+          "width":  { "type": "number", "exclusiveMinimum": 0 },
+          "height": { "type": "number", "exclusiveMinimum": 0, "description": "Required for every body/sensor chunk; omitted only for pit, gap, and trench." },
+          "params": { "type": "object", "description": "Free-form parameters forwarded to the prefab builder. For tower_defence, terrain is optional: route activation is expressed only by map_layout.paths[].unlocked_at_wave together with spawns[].path/wave; never encode TD routes as terrain chunks." }
+        }
+      }
+    },
+
+    "map_layout_ref": {
+      "type": "string",
+      "description": "TOWER DEFENSE ONLY — path to the shared map geometry SSOT (default `levels/map-layout.json`). Precedence: an embedded `map_layout` (below) wins; otherwise the game loads this file; otherwise it falls back to `levels/map-layout.json`. Stages normally stay light and reference the shared layout rather than embedding geometry."
+    },
+
+    "map_layout": {
+      "type": "object",
+      "description": "TOWER DEFENSE ONLY — the gameplay-authoritative map geometry SSOT. Canonically authored ONCE in `levels/map-layout.json` (shared across stages) and may be embedded here when a stage needs distinct geometry. The game code renders the visible road by stroking the SAME Phaser.Curves.Path the enemies walk, and places core/spawn/build-slot props from these coordinates. The map-base art is terrain-only and MUST NOT bake this geometry. All coordinates are map pixel space matching `canvas`. Validated by gateMapLayoutPresent.",
+      "required": ["canvas", "core", "spawns", "paths", "build_slots"],
+      "additionalProperties": false,
+      "properties": {
+        "canvas": {
+          "type": "object",
+          "required": ["width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "width":  { "type": "number", "minimum": 1 },
+            "height": { "type": "number", "minimum": 1 }
+          },
+          "description": "Pixel space the coordinates live in. Must equal the game screen / map-base dimensions."
+        },
+        "road_width": { "type": "number", "minimum": 1, "default": 48,
+                        "description": "Visible road stroke width (px), used by the code-rendered road and by render_layout_mask." },
+        "core": {
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": { "x": { "type": "number" }, "y": { "type": "number" } },
+          "description": "The defended objective position. Every path's last waypoint equals this point."
+        },
+        "spawns": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Enemy entry portals. Each path starts at one of these.",
+          "items": {
+            "type": "object",
+            "required": ["id", "x", "y"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "x":  { "type": "number" },
+              "y":  { "type": "number" }
+            }
+          }
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Ordered enemy routes. Each is a polyline from a spawn to the core. Enemies walk these EXACT waypoints; the visible road is stroked from the same polyline (this is the constructive consistency guarantee).",
+          "items": {
+            "type": "object",
+            "required": ["id", "spawn", "waypoints"],
+            "additionalProperties": false,
+            "properties": {
+              "id":    { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "spawn": { "type": "string", "description": "id of the spawn this path starts at; waypoints[0] must equal that spawn's (x,y)." },
+              "unlocked_at_wave": { "type": "integer", "minimum": 1, "default": 1,
+                                    "description": "1-indexed wave at/after which this route is active (enables progressive path unlocks)." },
+              "waypoints": {
+                "type": "array",
+                "minItems": 2,
+                "description": "Ordered (x,y) points. First == the spawn position, last == the core position.",
+                "items": {
+                  "type": "object",
+                  "required": ["x", "y"],
+                  "additionalProperties": false,
+                  "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+                }
+              }
+            }
+          }
+        },
+        "fork_nodes": {
+          "type": "array",
+          "description": "Optional visual junction markers where paths diverge or converge (decorative anchors; not required for walk geometry).",
+          "items": {
+            "type": "object",
+            "required": ["x", "y"],
+            "additionalProperties": false,
+            "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+          }
+        },
+        "build_slots": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Tower placement anchors. x/y is the footprint center. A slot must clear every path by road_width/2 + max(width,height)/2 + build_slot_margin_px, UNLESS it sets on_path:true for lane defence (enforced by gateMapLayoutPresent).",
+          "items": {
+            "type": "object",
+            "required": ["x", "y"],
+            "additionalProperties": false,
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "width":  { "type": "number", "exclusiveMinimum": 0, "default": 64 },
+              "height": { "type": "number", "exclusiveMinimum": 0, "default": 64 },
+              "on_path": {
+                "type": "boolean",
+                "default": false,
+                "description": "Lane-defence slot: the defender stands ON the route rather than beside it (plants on a lawn lane). Inverts the geometry requirement — instead of clearing the road, the slot footprint MUST overlap it, so the flag cannot be used to smuggle an off-road slot past the clearance check. Requires gates.tower_defence.map_layout.allow_on_path_build_slots."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "spawns": {
+      "type": "array",
+      "description": "Time-ordered spawn timeline. `at` is seconds since level start OR world x (auto-scroll only). implement-agent chooses via `spawn_trigger`.",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": false,
+        "properties": {
+          "id":       { "type": "string", "description": "Optional spawn id, used by tune patches." },
+          "at":       { "type": "number", "minimum": 0,
+                        "description": "Spawn time (seconds) OR world x (px), depending on `spawn_trigger` at level scope." },
+          "type":    { "type": "string", "minLength": 1, "description": "Entity prefab key. Examples: grunt, runner, gunner, tank, kamikaze, sniper, prisoner, pickup_health, pickup_weapon." },
+          "x":        { "type": "number",
+                        "description": "Horizontal spawn position. 0..1 = normalized to camera viewport (1.0 = right edge, off-screen). >1 = absolute world x." },
+          "y":        { "type": ["number", "string"],
+                        "description": "Vertical spawn. Number = absolute. String = 'ground' | 'ceiling' | 'air' | 'water' (snapped by LevelLoader)." },
+          "count":    { "type": "integer", "minimum": 1, "default": 1 },
+          "interval": { "type": "number", "minimum": 0, "default": 0,
+                        "description": "Seconds between each spawn when count > 1." },
+          "path":     { "type": "string", "minLength": 1,
+                        "description": "TOWER DEFENSE ONLY — id of the `map_layout.paths[]` route this enemy walks. Must reference a path that is unlocked by this enemy's `wave`. Ignored by other genres." },
+          "wave":     { "type": "integer", "minimum": 1,
+                        "description": "TOWER DEFENSE ONLY — 1-indexed wave this spawn belongs to (groups the spawn timeline into waves; gates path-unlock checks)." },
+          "behavior": { "type": "string",
+                        "description": "Behavior script id. Common: patrol, charge, stand_and_shoot, crouch_shoot, jump_attack, throw_grenade, kamikaze, escort." },
+          "hp":       { "type": "number", "minimum": 1 },
+          "drop":     { "type": "string", "description": "Pickup dropped on kill, e.g. heavy_machinegun, grenade_pack, score_medal." },
+          "reward":   { "type": "string", "description": "For rescuable entities (prisoner): item granted on rescue." },
+          "params":   { "type": "object", "description": "Free-form behavior params (patrol_range, fire_rate, etc.)." }
+        }
+      }
+    },
+
+    "spawn_trigger": {
+      "type": "string",
+      "enum": ["time", "world_x"],
+      "default": "time",
+      "description": "Interpret `spawns[].at` as seconds (time) or world x (world_x). Auto-scroll platform levels usually use 'world_x'."
+    },
+
+    "boss": {
+      "type": "object",
+      "description": "Optional boss encounter. Absent => no boss in this level.",
+      "required": ["type", "trigger", "hp", "patterns"],
+      "additionalProperties": false,
+      "properties": {
+        "type":    { "type": "string", "description": "Boss prefab key, e.g. metal_rear, hi_do, tetsuyuki." },
+        "trigger": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind":  { "type": "string", "enum": ["position", "time", "kill_count", "all_cleared"] },
+            "value": { "type": ["number", "string"] }
+          }
+        },
+        "hp":       { "type": "number", "minimum": 1 },
+        "arena":    { "type": "string", "description": "Optional. Locks camera at this terrain chunk id." },
+        "patterns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["phase", "hp_above", "attacks"],
+            "additionalProperties": false,
+            "properties": {
+              "phase":     { "type": "integer", "minimum": 1 },
+              "hp_above":  { "type": "number", "minimum": 0, "maximum": 1,
+                             "description": "Phase active while hp/maxHp > this value." },
+              "attacks":   { "type": "array", "items": { "type": "string" },
+                             "description": "Attack pattern ids cycled in this phase, e.g. cannon_burst, missile_rain." },
+              "interval":  { "type": "number", "minimum": 0, "default": 1.5,
+                             "description": "Seconds between attacks in this phase." }
+            }
+          }
+        }
+      }
+    },
+
+    "win_condition": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind":  { "type": "string", "enum": ["boss_defeated", "reach_end", "survive_time", "kill_quota", "rescue_quota", "custom"] },
+        "value": { "type": ["number", "string"] }
+      }
+    },
+
+    "lose_condition": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind":  { "type": "string", "enum": ["lives_zero", "timer_zero", "objective_lost", "custom"] },
+        "value": { "type": ["number", "string"] }
+      }
+    },
+
+    "starter_kit": { "type": "object",
+                     "description": "Initial genre-specific loadout and resources for this level.",
+                     "properties": {
+                       "weapon": { "type": "string" },
+                       "ammo":   { "type": "integer" },
+                       "lives":  { "type": "integer" },
+                       "hp":     { "type": "integer" },
+                       "money":  { "type": "integer", "minimum": 0 }
+                     } },
+
+    "notes": { "type": "string", "description": "Designer notes (not consumed by code)." }
+  }
+}

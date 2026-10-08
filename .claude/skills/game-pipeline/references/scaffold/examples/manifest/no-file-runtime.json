@@ -1,0 +1,10 @@
+{
+  "schema_version": 2,
+  "qualityProfile": "responsive",
+  "fileAssetsRequired": false,
+  "runtimeSources": [
+    "composition",
+    "procedural"
+  ],
+  "assets": []
+}

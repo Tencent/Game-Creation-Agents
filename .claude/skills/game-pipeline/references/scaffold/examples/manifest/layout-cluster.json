@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "qualityProfile": "responsive",
+  "fileAssetsRequired": true,
+  "runtimeSources": [
+    "composition",
+    "live-text",
+    "procedural"
+  ],
+  "assets": [
+    {
+      "key": "ui-health-icon",
+      "category": "ui",
+      "sourceStrategy": "generated-image",
+      "textureKey": "ui-health-icon",
+      "path": "assets/ui/ui-health-icon.png",
+      "maxBox": [96, 96],
+      "description": "Health icon composed with a live health value in the status cluster."
+    }
+  ]
+}

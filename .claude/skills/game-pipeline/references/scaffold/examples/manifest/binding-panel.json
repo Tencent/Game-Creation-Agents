@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "qualityProfile": "art_directed",
+  "fileAssetsRequired": true,
+  "runtimeSources": [],
+  "assets": [
+    {
+      "key": "ui-roster-panel",
+      "category": "ui",
+      "sourceStrategy": "generated-image",
+      "textureKey": "ui-roster-panel",
+      "path": "assets/ui/ui-roster-panel.png",
+      "description": "Empty illustrated roster panel with framed portrait and status regions; no text or numbers.",
+      "targetWidth": 420,
+      "value_less": true,
+      "slots": {
+        "collection": "CONFIG.units",
+        "repeat": true,
+        "fields": [
+          {
+            "name": "portrait",
+            "type": "image",
+            "bind": "unit.iconKey"
+          },
+          {
+            "name": "name",
+            "type": "text",
+            "bind": "unit.name",
+            "maxChars": 18,
+            "shrinkToFit": true
+          },
+          {
+            "name": "status",
+            "type": "text",
+            "bind": "unit.status",
+            "maxChars": 24,
+            "shrinkToFit": true
+          }
+        ]
+      }
+    }
+  ]
+}

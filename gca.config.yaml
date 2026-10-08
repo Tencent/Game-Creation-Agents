@@ -1,0 +1,478 @@
+# GCA runtime configuration.
+#
+# Keep this file simple: nested maps plus scalar values only. Credentials,
+# endpoints, and model markers still belong in environment variables.
+
+pipeline:
+  # Iteration / gate safety limits.
+  min_iterations: 1
+  max_iterations: 2              # hard general fix -> re-verify cap, enforced by verify/state/audit/Stop guards
+  max_consecutive_blocks: 5      # Stop safety valve before the iteration budget is exhausted
+  # Each fix cycle must address ALL blocking gate issues (grouped by owning agent,
+  # dispatched in parallel), not just the top one — see SKILL §9.1. The pipeline does
+  # not ship until every gate issue clears (all-or-nothing gate); this budget is how
+  # many cycles it will grind before handing the remaining list back to the user.
+  # The multimodal-GDD VISUAL axis additionally has its own fix -> re-verify loop up
+  # to `gates.visual.max_rounds` (2).
+
+  # Verification freshness and evidence requirements.
+  min_screenshots: 3
+  min_unique_screenshots: 3
+  staleness_tolerance_seconds: 60
+  max_analysis_age_minutes: 30
+  min_iteration_gap_seconds: 120
+
+  # state.json / audit.jsonl integrity checks.
+  max_counter_increment: 1
+  audit_tolerance: 1
+
+quality:
+  # Startup may select another named profile when the prompt clearly calls for
+  # responsive/localized UI, pixel art, or a deliberately minimal visual system.
+  # Profiles change style-production defaults, never evidence integrity,
+  # functional mechanics, aspect preservation, or runtime contract checks.
+  default_profile: art_directed
+
+gates:
+  play_quality_min_accuracy: 0.8
+  # Deterministic anti-placeholder checks for file-backed asset sets. PNGs have
+  # a per-axis dimension floor; exact-content diversity and aggregate size cover
+  # every image extension discovered by the generated-assets gate.
+  asset_sanity:
+    enabled: true
+    min_png_dimension_px: 32
+    min_unique_files: 3
+    min_total_bytes: 50000
+  # ready_to_ship evidence-round requirements. Visual rounds come from the
+  # visual-diff sidecar; gameplay rounds come from agent-play-history.jsonl.
+  # Optional stress evidence is a passing formal test whose name/file contains
+  # "stress" or "soak". These floors are independent of pipeline.max_iterations.
+  polish:
+    visual_rounds_min: 1
+    gameplay_rounds_min: 1
+    require_stress_tested: false
+  # Multimodal-GDD VISUAL verification loop (gateVisualDiff + element-visual-diff.mjs).
+  # The "comprehensive visual verification" axis — closes the mmGDD <-> screen gap at TWO granularities
+  # with a REAL image comparison (not a single whole-screen VLM glance):
+  #   * global  — the running screen vs its design/<screen>.png concept mockup;
+  #   * element — EACH design/crops/<screen>/<crop>.png, re-cropped from the SAME
+  #               box_px on the running canvas and paired 1:1 with its concept crop,
+  #               then judged by the VLM (method: paired_vlm; reference: concept_crop).
+  # element-visual-diff.mjs writes verify/alignment/{visual,element}/alignment.json
+  # (read by gateVisualAlignment / gateElementAlignment) PLUS a required
+  # verify_middle/visual/visual-diff-report.json sidecar (read by gateVisualDiff)
+  # and append-only visual-diff-history.jsonl (counted by the polish gate).
+  # This loop runs on its OWN budget — up to `gates.visual.max_rounds` fix ->
+  # re-verify rounds — separate from pipeline.max_iterations, which budgets every
+  # other axis (both are currently 2).
+  visual:
+    enabled: true
+    max_rounds: 2                # dedicated visual fix -> re-verify budget (NOT pipeline.max_iterations)
+    max_attempts: 1              # one pinned Doubao request per visual comparison; no retry
+    unavailable_policy: warn     # operational VLM failure is always reported and never blocks the pipeline
+    method: paired_vlm           # crop the rendered element by box_px, pair with the concept crop, focused VLM compare
+    reference: concept_crop      # per-element reference = design/crops/<screen>/<crop>.png (design intent)
+    axes:
+      global: true               # whole-screen: running screen vs design/<screen>.png
+      element: true              # per-element: rendered box_px region vs its concept crop
+    crop_padding_px: 6           # padding added around each box_px when clipping the running canvas
+    min_element_px: 16           # skip crops smaller than this (either side) — too small to compare
+    require_report: true         # gateVisualDiff blocks if the deterministic sidecar is missing/stale (proves the loop ran)
+  performance:
+    min_fps_p50: 24
+    min_fps_min: 10
+    max_boot_seconds: 10
+    max_long_task_count: 20
+    max_long_task_total_ms: 2000
+    max_memory_growth_mb: 50
+    max_object_growth_count: 250
+    max_object_slope_count_per_second: 10
+  rubric:
+    intention_min: 0.9
+    visual_min: 0.7
+    interaction_min: 0.8
+  # Deterministic entity scale / proportion / collision-fit gate (gateEntityScale).
+  # Read from .playtest/inputs/display-params.json (contentBbox * scale = rendered px).
+  scale:
+    min_entity_px: 12              # rendered content height floor (below = invisible)
+    max_entity_px: 4096            # rendered content height ceiling (above = screen/GPU-insane)
+    body_overflow_tolerance: 0.15  # collision body may exceed visible content by ≤15%
+    body_min_ratio: 0.30           # collision body must be ≥30% of visible content
+    size_class_tolerance: 0.10     # slack on relative-size ordering (player<enemy<boss)
+  # Deterministic subject-margin gate (gateSubjectMargin). Every generated
+  # sprite/prop must keep >= the given fraction of EMPTY margin between its
+  # content bbox and each frame edge (reads each *-sheet.json contentBbox vs
+  # frameWidth/frameHeight) — catches subject-fills-the-whole-image assets
+  # that break matting and clip downstream motion. Values below match the
+  # code defaults in gate-check.mjs.
+  subject_margin:
+    enabled: true                  # on unless explicitly set false
+    top: 0.05                      # min clear fraction of frame height above the subject
+    bottom: 0.05                   # min clear fraction below (foot-anchored characters exempt)
+    left: 0.05                     # min clear fraction of frame width left of the subject
+    right: 0.05                    # min clear fraction right of the subject
+  # Deterministic UI proportion / scale gate (gateUiProportion) — the forward
+  # "proportion control" enforcement for HUD/UI images. The sibling of `scale:` for sprites.
+  # The asset PNG is scaled to its in-game size at GENERATION (scale_uniform,
+  # aspect preserved); the runtime draws it 1:1, so the texture's on-disk size IS
+  # the display size — a single source of truth (no displayWidth guessed from the
+  # GDD). This gate therefore judges ASSET-SIZE SANITY: reads the `ui` block of
+  # .playtest/inputs/display-params.json (each rendered image's texture width/
+  # height) and checks it fits the §1 canvas, sits in its role's sane px range,
+  # keeps the PNG's own aspect (no render-time squash), and doesn't overlap/spill.
+  ui_scale:
+    min_px: 8                      # a rendered UI element below this (either axis) is invisible
+    max_texture_px: 4096           # hard GPU/texture safety ceiling on either source axis
+    aspect_tolerance: 0.18         # displayed aspect may differ from the PNG's own aspect by ≤ this (else a setDisplaySize crept in)
+    require_display_size: true     # every non-decorative UI image MUST list its texture width/height in the ui block
+    # Loose per-axis native-source guard. This is NOT the design-size authority:
+    # §2E owns each asset's authored native dimension. These limits only catch an
+    # obvious untouched 816/1024px generation; suitability is checked against the
+    # canvas below. Keep width/height separate so wide panels are not judged by a
+    # single longest-edge scalar.
+    role_px:
+      hud:
+        max_width: 800
+        max_height: 800
+      panel:
+        max_width: 1000
+        max_height: 1000
+    # Max share of the canvas a single element may occupy on either axis, by role
+    # bucket (key/category heuristic). A HUD widget filling the screen is the
+    # "blocking blue bar" bug; panels/banners are allowed to be larger.
+    max_canvas_fraction:
+      hud: 0.55                    # bars, counters, badges, buttons, icons
+      panel: 0.85                  # selection panels, stats panels, dialog frames
+      banner: 1.0                  # title logos, full-width art-words, backgrounds
+    # Layout pass (only over ui entries that carry x/y): placed widgets must not
+    # spill off-canvas or pile on top of each other. Set false to disable.
+    layout_check: true
+    # Overlap is measured origin-aware on BOTH axes in absolute px (not as an
+    # area fraction — two long thin panels colliding edge-to-edge are a tiny
+    # fraction but a visible text collision). A widget's own frame↔fill pair is
+    # skipped as intentional stacking; depth is reported for diagnosis, but it is
+    # not a blanket exemption for two colliding UI images. Rects use the full
+    # texture size (incl. transparent padding), so this buffer stays wide enough
+    # to absorb incidental padding overlap while still catching a real
+    # edge-to-edge text collision (~21px in the field).
+    overlap_min_px: 12             # >this many px of real overlap on BOTH axes between peer UI widgets = collision
+  # Per-element UI art parity / coverage gate (gateUiArtParity).
+  ui_coverage:
+    enabled: true
+    block_waived_widgets: true     # functional HUD-widget crops (bar/button/panel/badge/…) cannot be waived to bare text
+    require_wired_as_image: true   # every non-decorative §2E UI key must render via add.image/sprite in src/, not a primitive
+  # UI binding contract (gateUiBinding) — the general "text lands on the asset" +
+  # "slot/button count & function match the implementation" gate. Generalizes the
+  # TD-only hud_binding to any composite UI asset (gauge, dashboard, button, card
+  # panel). A binding asset declares, in the manifest, an `anchors` list (one per
+  # overlaid value: xPct/yPct/fontPct measured from the mockup — fractions of the
+  # asset box) and/or a `slots` spec (explicit button rects, or data-driven
+  # { source, action }). The gate enforces those declarations are consumed in code.
+  ui_binding:
+    enabled: true
+    require_anchors: true          # a value_less binding asset MUST declare anchors and/or slots (else its runtime text has no measured position)
+    require_text_binding: true     # each anchor's bound value must be rendered as runtime add.text (placeUiText), not baked / missing
+    require_slot_parity: true      # data-driven slot count must == its CONFIG source size, and be laid out FROM the source (no hardcoded literal)
+    require_action_wired: true     # every slot's `action` must be referenced in src/ (the button's function is actually wired)
+    # NOTE: whether an overlaid value actually LANDS on its anchor (right spot, right
+    # size) is a VLM judgment — verify Axis 3 (element looks-like), not a deterministic
+    # threshold. The deterministic position tolerance now lives under `gates.layout`
+    # (Axis 5, lays-out-like), which repurposes the formerly-dead `anchor_tolerance`
+    # into a live gate input instead of an unread element-axis knob here.
+  # Static-text-as-asset gate (gateStaticTextAsAsset, folded into ui_contract).
+  # Fixed-content text (labels/captions/titles/buttons/instructions/rank words)
+  # must ship as ART — baked into its parent widget, or its own lettering image.
+  # Only DYNAMIC values (score/%/timer/lives/roster) may be runtime add.text, and
+  # those are detected by being stored + updated via .setText. Blocks a static
+  # string literal rendered through add.text (Arial + size decoupled from frame).
+  ui_static_text:
+    enabled: true
+    min_word_letters: 2            # a literal needs a word of ≥ this many letters to count as static text (filters '0' / '00:00' placeholders)
+  # Scene layout alignment gate (gateLayoutAlignment) — Axis 5, the "lays-out-like"
+  # peer of plays-like (mechanics) and looks-like (visual). Every GDD §2.0.2 Scene
+  # Layout Design element (projected by scaffold into .playtest/inputs/layout-
+  # contract.json) MUST render at its measured position. The gate joins that contract
+  # to the Playwright bounds dump (verify_middle/layout/<scene>.rendered.json from
+  # capture-layout.mjs) and writes verify/alignment/layout/alignment.json. It auto-
+  # skips (N/A) only when every scene carries a validated concept-failure or pure-
+  # transition waiver, or the contract is absent/empty. Missing concepts for any
+  # unwaived scene block instead of silently disabling layout verification.
+  layout:
+    enabled: true
+    # A rendered element's center may sit ≤ this fraction of the canvas DIAGONAL off
+    # its §2.0.2 position. The gate role-scales it (HUD ×1.0 tight, lettering ×1.25,
+    # decorative ×1.6 looser) and gives kind:spawn entities ×1.25 slack; kind:zone
+    # rows are checked by centroid-containment instead of a point distance. A §2.0.2
+    # row may override per element via its own `tolerance`. Repurposes the formerly-
+    # dead `anchor_tolerance`, still accepted here as a back-compat alias.
+    tolerance: 0.04
+    # Share of §2.0.2 elements that must be rendered AND named (obj.name = key) to
+    # pass. 1.0 = every element corresponds to the mmgdd layout; an
+    # element never placed or left unnamed fails coverage. Lower only to stage a
+    # migration, never for a shipping game.
+    min_coverage: 1.0
+    # ── Rendered-bounds pass (Tier 0 of the container-layout plan).
+    # Runs inside gateLayoutAlignment over the REAL capture-layout.mjs getBounds
+    # dump (verify_middle/layout/<scene>.rendered.json) — unlike the ui_scale
+    # ledger pass, this sees what actually rendered. Scope: HUD-layer (effective
+    # scrollFactor 0,0) static/ui-* elements only; exempt: a widget's own
+    # frame↔fill stack, container↔child ancestry, decorative/banner art, and a
+    # widget/text sitting (≥90% contained) on a panel / its host widget. Rects
+    # shrink to the manifest contentBbox when present, so transparent padding
+    # never counts as overlap (and real art collisions inside padded frames do).
+    overlap_check: true            # governs the overlap + offscreen passes (size_check is independent)
+    overlap_min_px: 12             # real overlap on BOTH axes beyond this many px ⇒ collision
+    # Padding-ghost guard: applies ONLY to pairs where NEITHER rect could be
+    # shrunk to a manifest contentBbox (full-texture rects include transparent
+    # padding) — such a pair needs intersection/min(area) beyond this too. Pairs
+    # with a content-shrunk rect trigger on the px guard alone, so a thin ~21px
+    # edge-to-edge text collision between two wide panels still fires.
+    overlap_tolerance: 0.12
+    offscreen_min_px: 8            # rendered content may hang off-canvas ≤ this many px
+    # Rendered w/h vs the manifest texture px (drawn 1:1 these are equal). A drift
+    # means a render-time setScale/setDisplaySize — possibly on a PARENT CONTAINER,
+    # which the self-reported ledger can never see — is resizing the art. Size
+    # lives in the ASSET (scale_uniform); this closes the container-scale bypass.
+    # Independent of overlap_check. Exempt: Text and value-scaled -fill/-track/
+    # -progress layers (scaling a bar fill to the live value is sanctioned; the
+    # static frame/bg still guards the widget's true size).
+    size_check: true
+    size_drift_tolerance: 0.02
+  # Tower-defence asset↔implementation consistency gates (TD games only; the
+  # gates auto-skip non-TD genres). See references/implement/tower_defence.md.
+  tower_defence:
+    map_layout:                    # gateMapLayoutPresent — geometry SSOT exists + valid
+      enabled: true
+      require: true                # block a TD game with no levels/map-layout.json
+      endpoint_tolerance_px: 2     # waypoints[0]==spawn / waypoints[last]==core slack
+      build_slot_margin_px: 8      # clearance a slot must keep beyond road_width/2 + its own half-extent
+      canvas_tolerance_px: 2       # coords may sit this far outside the canvas
+      # Lane-defence support. The default TD shape is towers BESIDE a road, so a
+      # slot must clear every path. Some tower-defence games place defenders ON
+      # the lane instead (plants on a lawn row), which can never satisfy that
+      # clearance. Such a slot declares on_path:true, and the gate then inverts
+      # the requirement: its footprint must OVERLAP the road rather than clear
+      # it. Both branches share one threshold, so the flag cannot be used to
+      # push an off-road slot past the clearance check. Set false to forbid
+      # on-path slots outright and restore the strict beside-the-road contract.
+      allow_on_path_build_slots: true
+    no_baked_path:                 # gateNoBakedPath — map base declared terrain-only
+      enabled: true
+      require_terrain_only_flag: true
+    path_alignment:                # gatePathFromLayout — path from waypoints, no interpolation
+      enabled: true
+    hud_binding:                   # gateHudBinding — value-less panel + CONFIG-sourced labels
+      enabled: true
+  # Interaction / collision contract bundle (gateInteractionContract) — the
+  # physics counterpart of tower_defence. Reads .playtest/inputs/interaction-
+  # contract.json (joined to display-params.json on entityKey) and is
+  # genre-gated: pointer/board games with no layers/matrix auto-N/A, so the
+  # ~80% of non-physics games see zero new enforcement.
+  interaction:
+    enabled: true
+    require_for_physics_genres: true  # physics genres (platform / beat_em_up / bullet_hell / roguelike / sandbox / tower_defence) MUST declare layers+matrix
+    require_world_bounds: true            # physics games (non-TD) must set world bounds / setCollideWorldBounds(true)
+    min_hit_target_px: 24                 # a 'pick' target's measured hit body must be ≥ this (or its own min_hit_px)
+  # Deterministic anti-tunneling (gateTunnelRisk, member of the interaction bundle).
+  # A fast body whose per-frame travel (speed ÷ assumed_fps) ≥ the smallest target
+  # body it can hit will skip through it between frames. Conservative: only asserts
+  # when both the config speed and a measured target body are known.
+  tunnel:
+    enabled: true
+    assumed_fps: 60            # frame budget used to convert config speed → px/frame
+    speed_threshold: 200       # only entities faster than this (px/s) are checked
+    min_body_ratio: 1.0        # travel/frame must stay < target_body * this (1.0 = strict)
+  # Terrain prefab coverage (gatePrefabCoverage, member of the interaction bundle).
+  # platform (incl. auto-scroll variant) / side beat_em_up only: every terrain
+  # `chunk` used in levels/*.json must have a builder in src/. See
+  # references/level-design/terrain-prefabs.md.
+  prefab:
+    enabled: true
+  # Character-controller tuning DEFAULTS (authored, not measured). scaffold seeds
+  # CONFIG.player.controller from GDD §0.2's `character` block; these are the
+  # fallbacks when the GDD omits one. Consumed by the verbatim-copied
+  # src/character-controller.js. No gate reads these — they are the single feel SSOT.
+  character:
+    coyote_ms: 100             # grace window to still jump just after leaving a ledge
+    jump_buffer_ms: 120        # pre-press window so an early jump still fires on landing
+    variable_jump: true        # releasing jump early cuts upward velocity (short hop)
+    min_jump_ms: 80            # min hold (ms) before a variable-jump cut applies
+    max_slope_deg: 45          # steepest ground the controller treats as walkable
+    one_way_drop: true         # down+jump drops through a one-way platform
+    max_fall_speed: 1200       # terminal-velocity clamp (px/s) — anti-tunnel + feel
+
+design:
+  # Caps on the GDD §2 asset catalog (per game): entity/action/layer/prop/UI
+  # row counts the design-agent may plan. Bound production scope + cost; genuine
+  # overflow ships marked "EXTENDED SCOPE". This file is authoritative.
+  max_sprite_entities: 4
+  max_actions_per_entity: 3
+  max_sprite_action_rows: 15
+  max_background_layers: 4
+  max_prop_packs: 3
+  max_ui_elements: 4          # distinct UI/HUD element rows in GDD §2E
+  # Multimodal GDD concept cost bounds. Scene coverage follows the selected
+  # quality profile; bounded generation failure uses the documented
+  # layout-complete warning fallback. A scene is never dropped to save spend.
+  # Genuine overflow ships marked "EXTENDED SCOPE".
+  max_concept_images: 6
+  concept_images_hard_cap: 8
+
+assets:
+  image:
+    request_timeout_seconds: 310
+    default_size: auto
+    edit_default_size: "1024x1024"
+    # API request canvases, not runtime display dimensions. Runtime/native UI
+    # sizing remains authored per element in GDD §2E and applied uniformly.
+    size_by_asset_type:
+      sprite: "960x960"
+      character: "960x960"
+      player: "960x960"
+      npc: "960x960"
+      creature: "960x960"
+      enemy: "960x960"
+      boss: "960x960"
+      reference: "960x960"
+      tileset: "1024x1024"
+      background: "1536x864"
+      map: "1536x864"
+      parallax: "1536x864"
+      prop: "816x816"
+      item: "816x816"
+      fx: "816x816"
+      effect: "816x816"
+      projectile: "816x816"
+      impact: "816x816"
+      ui: "816x816"
+      icon: "816x816"
+      button: "816x816"
+      hud: "816x816"
+    size_by_aspect:
+      square: "1024x1024"
+      landscape: "1536x864"
+      portrait: "864x1536"
+      wide: "1792x768"
+      tall: "768x1792"
+    default_quality: low
+    max_retries: 3
+    retry_delay_seconds: 10
+    enforce_safe_bg_avoidance: true
+    # Canvas-fill color used when a matted asset_type (prop/tile/ui/icon/…) is
+    # generated/edited WITHOUT an explicit safe_bg_color, so its background stays
+    # removable. Opaque scene types (background/map/parallax) are never filled.
+    safe_bg_color: "#FF00FF"
+
+  seedance:
+    model: fast
+    duration: 4
+    ratio: "16:9"
+    sprite_ratio: "1:1"
+    resolution: 480p
+    # One returned video per request chain by default. Validation failure does
+    # not trigger another generation unless this is explicitly raised.
+    max_quality_candidates: 1
+    # A new generation is allowed only when no usable video was returned due
+    # to a transient network/timeout/5xx/no-output failure.
+    transient_max_attempts: 3
+    transient_retry_delay_seconds: 5
+    # Allow enough time for ARK task submission and polling.
+    server_timeout_seconds: 600
+    download_timeout_seconds: 120
+
+  rmbg:
+    aug_preset: off
+    rmbg_fg_cutoff: 230
+    max_size: 960
+    workers: 8
+    gif_max_size: 960
+    gif_alpha_threshold: 200
+    keep_frames: true
+    timeout_seconds: 60
+    align_feet_to_bottom: false
+    foot_margin_px: 0
+
+  # Which matting backend generated static and dynamic assets use.
+  #   auto      — prefer RMBG-2.0, then use color-key on network, missing-route
+  #               HTTP 404, or HTTP 5xx outage.
+  #   rmbg2     — RMBG-2.0 service (remote or local deployment via RMBG_BASE_URL).
+  #   color_key — pure-computation #FF00FF / #00F000 fallback, no model / no API
+  #               (uses the generated asset's safe_bg_color).
+  matting:
+    backend: auto
+    color_key_threshold: 100
+    color_key_edge_threshold: 150
+
+  sprite:
+    min_frame_dimension_px: 64
+    safe_bg_color: "#FF00FF"
+    image_size: "1024x1024"
+    image_quality: low
+    image_max_attempts: 1
+    duration: 4
+    ratio: "1:1"
+    resolution: 480p
+    seedance_model: fast
+    aug_preset: off
+    rmbg_fg_cutoff: 230
+    gif_alpha_threshold: 200
+    align_feet_to_bottom: true
+    foot_margin_px: 2
+    matte_workers: 8
+    fps: 12
+    max_frames: 24
+    max_sheet_width: 4096
+    # Entity/projectile body animations never bake their separate trail/impact
+    # effect into the body sheet. Profile-declared FX flipbooks are separate
+    # manifest entries; particle/mask/shader strategies have no sheet.
+    effects: false
+
+  vlm:
+    # Runtime-pinned to doubao-seed-2-0-pro-260215; alternate
+    # model values are rejected.
+    model: doubao-seed-2-0-pro-260215
+    image_max_tokens: 1200
+    detect_max_tokens: 2500
+    image_timeout_seconds: 120
+    # Slot-fit checks fan out every requested asset concurrently; each item gets
+    # one Doubao request and no retry.
+    slot_timeout_seconds: 120
+    slot_attempts_per_model: 1
+    video_max_tokens: 1500
+    video_timeout_seconds: 180
+    iterate_max_tokens: 800
+    iterate_timeout_seconds: 120
+    temperature: 0.0
+
+verify:
+  run_tests_timeout_seconds: 1200
+  play_game_timeout_seconds: 1200
+  # Browser play-agent wall budget. play_game_timeout_seconds must stay at
+  # least 15s longer so the runner can seal a partial, runtime-bound report.
+  play_max_wall_seconds: 240
+  # Code-level verify DAG concurrency. Browser producers write disjoint output
+  # directories; provider-backed branches (play + visual comparison + video
+  # analysis) also consume the smaller provider semaphore.
+  max_parallel_producers: 5
+  max_parallel_provider_producers: 2
+  record_duration_seconds: 30
+  record_timeout_seconds: 600
+  video_analysis_timeout_seconds: 1800
+  # Skip the video verification pipeline entirely (record_with_state +
+  # analyze_video + the performance/playthrough gates). This config sets it
+  # Release verification includes video + performance by default. Set this true
+  # only with an explicit state.release_waivers[] `video-performance` approval;
+  # ready_to_ship rejects a silent config-only skip.
+  # Honored by the MCP tools (record_with_state / analyze_video return
+  # {skipped:true}; run_tests / play_game silently drop record:true),
+  # write_verify_report (video artifacts not flagged missing),
+  # gate-check.mjs (gatePlaythroughRecorded + gatePerformance auto-N/A),
+  # and the stop hooks (no video freshness / playthrough_recorded enforcement).
+  skip_video: false
+  # When skip_video is false, video is release-only: never on the first pass or a
+  # normal fix round. SKILL §8/§9 use MODE=iterate (screenshots + visual/element
+  # image-diff + gameplay + layout) until `iteration_ready` is green, then MODE=full
+  # adds recording, analysis, and performance for `ready_to_ship`. One full pass is
+  # normally enough; a full-only blocker or later build change requires fresh full
+  # evidence. The stop hooks use verify-report `mode` to defer video/playthrough/
+  # performance enforcement to release confirmation.

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "genre": "platform",
+  "interaction_profile": "arcade-gravity",
+  "scheme": "keyboard",
+  "canvas": {
+    "designWidth": 1280,
+    "designHeight": 720
+  },
+  "gameContext": "Reach the exit while avoiding hazards.",
+  "player": {
+    "entityKey": "player",
+    "moveSpeed": 280,
+    "jumpVelocity": -520
+  },
+  "actions": {
+    "move_left": {
+      "primitive": "key_down",
+      "key": "ArrowLeft"
+    },
+    "move_right": {
+      "primitive": "key_down",
+      "key": "ArrowRight"
+    },
+    "jump": {
+      "primitive": "key_press",
+      "key": "Space"
+    }
+  },
+  "world": {
+    "gravity": {
+      "x": 0,
+      "y": 900
+    },
+    "bounds": [
+      0,
+      0,
+      1280,
+      720
+    ]
+  },
+  "layers": [
+    "player",
+    "terrain",
+    "hazard",
+    "goal"
+  ],
+  "entities": {
+    "player": {
+      "layer": "player",
+      "body": "dynamic",
+      "shape": "rect",
+      "fit": "bbox"
+    },
+    "terrain": {
+      "layer": "terrain",
+      "body": "static",
+      "shape": "rect",
+      "fit": "bbox"
+    },
+    "hazard": {
+      "layer": "hazard",
+      "body": "sensor",
+      "shape": "rect",
+      "fit": "bbox"
+    },
+    "exit": {
+      "layer": "goal",
+      "body": "sensor",
+      "shape": "rect",
+      "fit": "bbox"
+    }
+  },
+  "matrix": [
+    [
+      "player",
+      "terrain",
+      "collide"
+    ],
+    [
+      "player",
+      "hazard",
+      "overlap"
+    ],
+    [
+      "player",
+      "goal",
+      "overlap"
+    ]
+  ]
+}

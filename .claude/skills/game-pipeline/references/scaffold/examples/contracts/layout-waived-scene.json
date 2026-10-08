@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "canvas": {
+    "designWidth": 1280,
+    "designHeight": 720
+  },
+  "scenes": {
+    "GameScene": {
+      "reference": "waived:concept-generation-unavailable",
+      "elements": [
+        {
+          "key": "arena",
+          "kind": "zone",
+          "box": [0.08, 0.2, 0.84, 0.7],
+          "origin": [0, 0],
+          "role": "playfield",
+          "sourceStrategy": "procedural"
+        }
+      ]
+    }
+  },
+  "waived_scenes": ["GameScene"]
+}

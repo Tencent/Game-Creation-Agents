@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "qualityProfile": "art_directed",
+  "fileAssetsRequired": true,
+  "runtimeSources": [],
+  "assets": [
+    {
+      "key": "player",
+      "category": "character",
+      "sourceStrategy": "generated-image",
+      "layout": "per-action",
+      "defaultAction": "idle",
+      "path": "assets/sprites/player/idle-sheet.png",
+      "metadata": "assets/sprites/player/idle-sheet.json",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "actions": {
+        "idle": {
+          "textureKey": "player-idle",
+          "path": "assets/sprites/player/idle-sheet.png",
+          "metadata": "assets/sprites/player/idle-sheet.json"
+        },
+        "run": {
+          "textureKey": "player-run",
+          "path": "assets/sprites/player/run-sheet.png",
+          "metadata": "assets/sprites/player/run-sheet.json"
+        }
+      },
+      "placeholder": "rectangle",
+      "description": "Flat side-view courier with a readable satchel silhouette and consistent proportions."
+    }
+  ]
+}

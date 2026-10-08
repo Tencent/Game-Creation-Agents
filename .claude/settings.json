@@ -1,0 +1,97 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__gca__*"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "gca"
+  ],
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Read|Glob|Grep|Write|Edit|MultiEdit|Notebook.*|Bash|Shell)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/session/guard-agent-boundary.py"
+            ]
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/session/bind-pipeline-session.py"
+            ]
+          }
+        ]
+      },
+      {
+        "matcher": "Skill|mcp__gca__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/validation/check-env.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PROJECT_DIR}/.claude/hooks/session/guard-mcp-restart.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__gca__init_workspace|mcp__gca__close_workspace",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/session/bind-pipeline-session.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "design-agent|level-design-agent|scaffold-agent|implement-agent|asset-integration-agent|assets-agent|verify-agent|critic-agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/session/bind-pipeline-session.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-pipeline.sh",
+            "args": []
+          }
+        ]
+      }
+    ]
+  }
+}

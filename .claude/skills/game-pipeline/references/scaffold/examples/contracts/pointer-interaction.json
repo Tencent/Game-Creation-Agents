@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "genre": "puzzle",
+  "interaction_profile": "none",
+  "scheme": "pointer",
+  "canvas": {
+    "designWidth": 1280,
+    "designHeight": 720
+  },
+  "gameContext": "Select a card, then place it in a compatible board slot.",
+  "actions": {
+    "select_card": {
+      "primitive": "pointer_down",
+      "target": "card",
+      "argsFromLLM": ["x", "y"]
+    },
+    "place_card": {
+      "primitive": "pointer_down",
+      "target": "slot",
+      "argsFromLLM": ["x", "y"]
+    }
+  },
+  "world": {},
+  "layers": [
+    "card",
+    "slot"
+  ],
+  "entities": {
+    "card": {
+      "layer": "card",
+      "body": "none",
+      "shape": "rect",
+      "fit": "bbox",
+      "min_hit_px": 40
+    },
+    "slot": {
+      "layer": "slot",
+      "body": "none",
+      "shape": "rect",
+      "fit": "bbox",
+      "min_hit_px": 40
+    }
+  },
+  "matrix": [
+    [
+      "card",
+      "card",
+      "pick"
+    ],
+    [
+      "slot",
+      "slot",
+      "pick"
+    ],
+    [
+      "card",
+      "slot",
+      "ignore"
+    ]
+  ]
+}

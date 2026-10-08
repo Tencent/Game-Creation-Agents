@@ -1,0 +1,78 @@
+{
+  "level_id": "stage_1",
+  "name": "Jungle Strike",
+  "genre": "platform",
+  "difficulty": "normal",
+
+  "next_level": null,
+  "unlock_mode": "sequential",
+
+  "scroll": { "mode": "auto", "speed": 80, "axis": "x" },
+  "length": 4800,
+  "spawn_trigger": "world_x",
+
+  "starter_kit": {
+    "weapon": "handgun",
+    "ammo": -1,
+    "lives": 3,
+    "hp": 1
+  },
+
+  "terrain": [
+    { "chunk": "flat_ground",   "x": 0,    "width": 1200, "height": 64 },
+    { "chunk": "high_platform", "x": 900,  "width": 200,  "height": 32, "y": 320 },
+    { "chunk": "broken_bridge", "x": 1200, "width": 600,  "height": 64, "params": { "gap_width": 80 } },
+    { "chunk": "trench",        "x": 1800, "width": 800,  "params": { "depth": 60 } },
+    { "chunk": "flat_ground",   "x": 2600, "width": 1400, "height": 64 },
+    { "chunk": "ramp_up",       "x": 3700, "width": 300,  "height": 120 },
+    { "chunk": "boss_arena",    "x": 4000, "width": 800,  "height": 64, "params": { "lock_camera": true } }
+  ],
+
+  "spawns": [
+    { "id": "s1", "at": 300,  "type": "grunt",   "x": 1.0, "y": "ground", "behavior": "patrol",
+      "params": { "patrol_range": 80 } },
+    { "id": "s2", "at": 550,  "type": "grunt",   "x": 1.0, "y": "ground", "count": 2, "interval": 0.4,
+      "behavior": "charge" },
+
+    { "id": "s3", "at": 800,  "type": "prisoner","x": 0.7, "y": "ground", "behavior": "escort",
+      "reward": "heavy_machinegun" },
+
+    { "id": "s4", "at": 1100, "type": "gunner",  "x": 1.0, "y": "ground", "behavior": "crouch_shoot",
+      "params": { "fire_rate": 1.5 } },
+    { "id": "s5", "at": 1400, "type": "kamikaze","x": 1.0, "y": "air",
+      "behavior": "kamikaze", "params": { "drop_angle": -30 } },
+
+    { "id": "s6", "at": 1800, "type": "grunt",   "x": 1.0, "y": "ground", "count": 3, "interval": 0.3,
+      "behavior": "throw_grenade" },
+
+    { "id": "s7", "at": 2400, "type": "tank",    "x": 1.0, "y": "ground", "hp": 80,
+      "behavior": "stand_and_shoot", "drop": "grenade_pack",
+      "params": { "fire_rate": 2.0, "cannon_damage": 1 } },
+
+    { "id": "s8", "at": 2900, "type": "prisoner","x": 0.5, "y": "ground", "reward": "score_medal" },
+
+    { "id": "s9", "at": 3100, "type": "sniper",  "x": 1.0, "y": "air",
+      "behavior": "stand_and_shoot", "params": { "fire_rate": 3.0, "leading": true } },
+    { "id": "s10","at": 3300, "type": "gunner",  "x": 1.0, "y": "ground", "count": 2, "interval": 0.5,
+      "behavior": "crouch_shoot" },
+
+    { "id": "s11","at": 3700, "type": "pickup_health", "x": 0.5, "y": "ground" }
+  ],
+
+  "boss": {
+    "type": "metal_rear",
+    "trigger": { "kind": "position", "value": 4000 },
+    "arena":   "boss_arena",
+    "hp": 500,
+    "patterns": [
+      { "phase": 1, "hp_above": 0.6, "attacks": ["cannon_burst", "missile_rain"], "interval": 1.8 },
+      { "phase": 2, "hp_above": 0.3, "attacks": ["cannon_burst", "missile_rain", "ground_slam"], "interval": 1.4 },
+      { "phase": 3, "hp_above": 0.0, "attacks": ["laser_sweep", "ground_slam", "missile_rain"], "interval": 1.0 }
+    ]
+  },
+
+  "win_condition":  { "kind": "boss_defeated" },
+  "lose_condition": { "kind": "lives_zero" },
+
+  "notes": "First-level pacing target: ~3:30. Difficulty spike intentionally placed at s7 (tank). If telemetry shows >50% deaths before s7, soften s6 by reducing count from 3 to 2 (level-tune candidate)."
+}

@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gca.harnessrl.dev/schemas/layout-contract.json",
+  "title": "GCA Layout Contract",
+  "type": "object",
+  "required": ["schema_version", "canvas", "scenes", "waived_scenes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "canvas": {
+      "type": "object",
+      "required": ["designWidth", "designHeight"],
+      "additionalProperties": false,
+      "properties": {
+        "designWidth": { "type": "integer", "minimum": 1 },
+        "designHeight": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "scenes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["elements"],
+        "additionalProperties": false,
+        "properties": {
+          "reference": { "type": "string", "minLength": 1 },
+          "elements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "kind", "box", "role", "sourceStrategy"],
+              "properties": {
+                "key": { "type": "string", "minLength": 1 },
+                "kind": {
+                  "type": "string",
+                  "enum": ["static", "spawn", "zone", "cluster"]
+                },
+                "box": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "items": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "origin": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "role": { "type": "string", "minLength": 1 },
+                "sourceStrategy": {
+                  "type": "string",
+                  "enum": [
+                    "generated-image",
+                    "supplied-image",
+                    "licensed-image",
+                    "procedural",
+                    "live-text",
+                    "composition"
+                  ]
+                },
+                "tolerance": { "type": "number", "minimum": 0, "maximum": 1 },
+                "members": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "children": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["kind", "sourceStrategy"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": ["image", "text"]
+                      },
+                      "key": { "type": "string", "minLength": 1 },
+                      "bind": { "type": "string", "minLength": 1 },
+                      "sourceStrategy": {
+                        "type": "string",
+                        "enum": [
+                          "generated-image",
+                          "supplied-image",
+                          "licensed-image",
+                          "procedural",
+                          "live-text",
+                          "composition"
+                        ]
+                      },
+                      "maxChars": { "type": "integer", "minimum": 1 },
+                      "align": { "type": "string", "minLength": 1 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "waived_scenes": {
+      "description": "Scene keys whose reference is exactly waived:pure-transition or waived:concept-generation-unavailable; gateSceneCoverage validates the cross-field token.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

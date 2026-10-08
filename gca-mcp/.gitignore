@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+dist/
+build/
+.uv.lock
+
+# Safety net: test artifacts belong in the game's own .playtest/, never here
+# (this dir is the MCP server's cwd). If a relative default path ever leaks,
+# keep it out of version control.
+.playtest/
+recordings/

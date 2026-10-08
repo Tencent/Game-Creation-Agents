@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gca.harnessrl.dev/schemas/objectives.json",
+  "title": "GCA Play Objectives",
+  "type": "object",
+  "required": ["schema_version", "objectives"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "x-uniqueBy": "id",
+      "contains": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "const": "start_game" }
+        }
+      },
+      "items": {
+        "type": "object",
+        "required": ["id", "operation", "expected_result"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "operation": { "type": "string", "minLength": 1, "pattern": "\\S" },
+          "expected_result": { "type": "string", "minLength": 1, "pattern": "\\S" },
+          "max_steps": { "type": "integer", "minimum": 1 },
+          "scenes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1, "pattern": "\\S" }
+          },
+          "setup": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "oneOf": [
+              {
+                "required": ["scene"]
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "state": {
+                    "type": "object",
+                    "propertyNames": { "pattern": "\\S" },
+                    "additionalProperties": { "type": "object" }
+                  },
+                  "snapshot": { "type": ["string", "object"], "pattern": "\\S" },
+                  "eval": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "js": { "type": "string", "minLength": 1, "pattern": "\\S" }
+                }
+              }
+            ],
+            "properties": {
+              "scene": { "type": "string", "minLength": 1, "pattern": "\\S" },
+              "stop": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "pattern": "\\S" }
+              },
+              "data": { "type": "object" },
+              "state": {
+                "type": "object",
+                "propertyNames": { "pattern": "\\S" },
+                "additionalProperties": { "type": "object" }
+              },
+              "snapshot": { "type": ["string", "object"], "pattern": "\\S" },
+              "eval": { "type": "string", "minLength": 1, "pattern": "\\S" },
+              "js": { "type": "string", "minLength": 1, "pattern": "\\S" }
+            }
+          },
+          "success": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["activeScene"],
+                "additionalProperties": false,
+                "properties": {
+                  "activeScene": { "type": "string", "minLength": 1, "pattern": "\\S" }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["scene", "custom", "op", "value"],
+                "additionalProperties": false,
+                "properties": {
+                  "scene": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "custom": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "op": { "enum": [">", ">=", "<", "<=", "==", "!="] },
+                  "value": { "type": ["number", "string", "boolean", "null"] }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["scene", "group", "field", "op", "value"],
+                "additionalProperties": false,
+                "properties": {
+                  "scene": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "group": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "field": { "type": "string", "minLength": 1, "pattern": "\\S" },
+                  "op": { "enum": [">", ">=", "<", "<=", "==", "!="] },
+                  "value": { "type": ["number", "string", "boolean", "null"] }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

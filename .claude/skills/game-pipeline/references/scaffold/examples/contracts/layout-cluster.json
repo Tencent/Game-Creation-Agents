@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "canvas": {
+    "designWidth": 1280,
+    "designHeight": 720
+  },
+  "scenes": {
+    "GameScene": {
+      "reference": "design/game-scene.png",
+      "elements": [
+        {
+          "key": "ui-status-cluster",
+          "kind": "cluster",
+          "box": [
+            0.03,
+            0.04,
+            0.28,
+            0.1
+          ],
+          "origin": [
+            0,
+            0
+          ],
+          "role": "status HUD",
+          "sourceStrategy": "composition",
+          "members": [
+            "ui-health-icon",
+            "healthValue"
+          ],
+          "children": [
+            {
+              "kind": "image",
+              "key": "ui-health-icon",
+              "sourceStrategy": "generated-image"
+            },
+            {
+              "kind": "text",
+              "bind": "healthValue",
+              "sourceStrategy": "live-text"
+            }
+          ]
+        },
+        {
+          "key": "arena",
+          "kind": "zone",
+          "box": [
+            0.08,
+            0.2,
+            0.84,
+            0.7
+          ],
+          "role": "playfield",
+          "sourceStrategy": "procedural"
+        }
+      ]
+    }
+  },
+  "waived_scenes": []
+}

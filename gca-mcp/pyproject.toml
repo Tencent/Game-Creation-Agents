@@ -1,0 +1,48 @@
+[project]
+name = "gca-mcp"
+version = "0.1.0"
+description = "Agent-native MCP server for Game Creative Agent (GCA): image/video generation, post-processing, and gameplay verification tools."
+readme = "README.md"
+authors = [
+    { name = "GCA", email = "noreply@example.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.2.0,<2.0",
+    "pydantic>=2.6",
+    "httpx>=0.27",
+    "requests>=2.31",
+    "Pillow>=10.0",
+    "numpy>=1.26",
+    "jsonschema>=4.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+# Optional local background removal (RMBG-2.0 / BiRefNet). Install with
+# `uv sync --extra local-rmbg`.
+local-rmbg = [
+    "torch",
+    "torchvision",
+    "transformers",
+    "timm",
+    "kornia",
+    "einops",
+    "scikit-image",
+]
+
+[project.scripts]
+gca-mcp = "gca_mcp.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.6,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests/py"]
+pythonpath = ["tests/py"]

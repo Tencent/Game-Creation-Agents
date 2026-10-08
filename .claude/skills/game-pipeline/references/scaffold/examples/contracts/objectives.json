@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "objectives": [
+    {
+      "id": "start_game",
+      "operation": "Start from the title screen and enter the first playable scene.",
+      "expected_result": "The game reaches an interactive scene without errors.",
+      "max_steps": 8,
+      "success": {
+        "activeScene": "GameScene"
+      }
+    },
+    {
+      "id": "complete_core_loop",
+      "operation": "Use the primary controls to make meaningful progress toward the goal.",
+      "expected_result": "The game state visibly advances and remains responsive.",
+      "max_steps": 24,
+      "scenes": [
+        "GameScene"
+      ]
+    }
+  ]
+}

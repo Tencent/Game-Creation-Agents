@@ -1,0 +1,40 @@
+{
+  "level_id": "stage_1",
+  "name": "Outer Ring Defense",
+  "genre": "tower_defence",
+  "difficulty": "normal",
+
+  "next_level": null,
+  "unlock_mode": "sequential",
+
+  "scroll": { "mode": "static" },
+  "length": 0,
+  "spawn_trigger": "time",
+
+  "map_layout_ref": "levels/map-layout.json",
+
+  "starter_kit": { "money": 220, "lives": 20 },
+
+  "spawns": [
+    { "id": "w1a", "wave": 1, "at": 1.0,  "type": "scout",  "path": "north", "count": 6,  "interval": 0.9 },
+
+    { "id": "w2a", "wave": 2, "at": 22.0, "type": "scout",  "path": "north", "count": 8,  "interval": 0.7 },
+    { "id": "w2b", "wave": 2, "at": 30.0, "type": "raider", "path": "north", "count": 3,  "interval": 1.2 },
+
+    { "id": "w3a", "wave": 3, "at": 48.0, "type": "raider", "path": "north", "count": 6,  "interval": 0.8 },
+    { "id": "w3b", "wave": 3, "at": 50.0, "type": "scout",  "path": "south", "count": 8,  "interval": 0.6 },
+
+    { "id": "w4a", "wave": 4, "at": 74.0, "type": "brute",  "path": "north", "count": 4,  "interval": 1.8, "hp": 240 },
+    { "id": "w4b", "wave": 4, "at": 76.0, "type": "raider", "path": "south", "count": 8,  "interval": 0.7 },
+
+    { "id": "w5a", "wave": 5, "at": 104.0, "type": "brute", "path": "north", "count": 6,  "interval": 1.4, "hp": 260 },
+    { "id": "w5b", "wave": 5, "at": 106.0, "type": "brute", "path": "south", "count": 6,  "interval": 1.4, "hp": 260 },
+    { "id": "w5c", "wave": 5, "at": 130.0, "type": "boss_titan", "path": "north", "count": 1, "hp": 3200,
+      "behavior": "armored", "params": { "armor": 0.3 } }
+  ],
+
+  "win_condition":  { "kind": "custom", "value": "all_waves_cleared" },
+  "lose_condition": { "kind": "objective_lost", "value": "core" },
+
+  "notes": "Geometry (paths, core, spawns, build slots) is NOT defined here — it lives in the shared SSOT levels/map-layout.json (see example_tower_defence_map_layout.json) and is rendered by code. This stage only sequences waves and references routes by their map_layout path id. The `south` route activates at wave 3 (its `unlocked_at_wave` in the layout); spawns must not send enemies down a path before it unlocks. Pacing target ~2:30; the wave-5 boss_titan is the difficulty climax."
+}
