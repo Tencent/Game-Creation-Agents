@@ -295,6 +295,6 @@ If you find GCA helpful, please cite:
   title       = {{Game-Creation-Agents: Autonomous Game Production}},
   author      = {{Multimodal Reinforcement Learning Team, Tencent}},
   institution = {Tencent},
-  year        = {2026},
+  year        = {2026}
 }
 ```
