@@ -54,8 +54,28 @@ def test_repository_host_requirements_are_explicit_and_match_readme() -> None:
     assert not (REPO_ROOT / retired_container_file).exists()
 
 
-def test_repository_matting_backend_is_auto() -> None:
-    assert PREFLIGHT._parse_matting_backend(REPO_ROOT / "gca.config.yaml") == "auto"
+def test_repository_matting_backend_is_model_free() -> None:
+    """The shipped default must not enable a non-commercial matting model.
+
+    RMBG-2.0 is CC BY-NC 4.0 and is never downloaded or enabled by default;
+    `auto` and `rmbg2` are explicit opt-ins. See LICENSE.
+    """
+    assert (
+        PREFLIGHT._parse_matting_backend(REPO_ROOT / "gca.config.yaml") == "color_key"
+    )
+
+
+def test_missing_or_invalid_matting_config_falls_back_to_model_free(
+    tmp_path: Path,
+) -> None:
+    assert PREFLIGHT._parse_matting_backend(tmp_path / "absent.yaml") == "color_key"
+
+    invalid = tmp_path / "gca.config.yaml"
+    invalid.write_text(
+        "assets:\n  matting:\n    backend: nonsense\n",
+        encoding="utf-8",
+    )
+    assert PREFLIGHT._parse_matting_backend(invalid) == "color_key"
 
 
 @pytest.mark.parametrize(

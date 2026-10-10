@@ -393,13 +393,20 @@ assets:
     foot_margin_px: 0
 
   # Which matting backend generated static and dynamic assets use.
+  #   color_key — DEFAULT. Pure-computation #FF00FF / #00F000 matting, no model
+  #               and no API (uses the generated asset's safe_bg_color). GCA
+  #               downloads no model weights on this route.
   #   auto      — prefer RMBG-2.0, then use color-key on network, missing-route
   #               HTTP 404, or HTTP 5xx outage.
   #   rmbg2     — RMBG-2.0 service (remote or local deployment via RMBG_BASE_URL).
-  #   color_key — pure-computation #FF00FF / #00F000 fallback, no model / no API
-  #               (uses the generated asset's safe_bg_color).
+  #
+  # `auto` and `rmbg2` load RMBG-2.0, which is licensed under CC BY-NC 4.0 and
+  # prohibits commercial use. GCA neither ships nor enables it by default;
+  # selecting either value is an explicit opt-in, and you are responsible for
+  # obtaining the model and complying with its license. `color_key` produces
+  # harder edges than RMBG-2.0 in exchange for needing no model at all.
   matting:
-    backend: auto
+    backend: color_key
     color_key_threshold: 100
     color_key_edge_threshold: 150
 

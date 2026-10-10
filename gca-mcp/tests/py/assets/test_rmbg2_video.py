@@ -25,6 +25,23 @@ def _reset_rmbg_availability():
     matting_availability.reset_rmbg_availability()
 
 
+def _auto_matting_config() -> Config:
+    """Config with matting explicitly opted into ``auto``.
+
+    The shipped default is the model-free ``color_key`` backend, so tests that
+    exercise RMBG probing and its color-key fallback must opt in by name rather
+    than inherit the repository default.
+    """
+    config = Config.from_env()
+    return replace(
+        config,
+        assets=replace(
+            config.assets,
+            matting=replace(config.assets.matting, backend="auto"),
+        ),
+    )
+
+
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg required")
 def test_preview_composites_transparency_onto_black(tmp_path: Path) -> None:
     frames = tmp_path / "frames"
@@ -132,7 +149,7 @@ def test_auto_video_fallback_remattes_entire_clip_without_mixed_frames(
     monkeypatch.setattr(rmbg2_video, "get_provider", lambda _config: provider)
 
     result = rmbg2_video.matte_video(
-        Config.from_env(),
+        _auto_matting_config(),
         input_video=input_video,
         output_dir=tmp_path / "matte",
         formats=["gif"],
@@ -180,7 +197,7 @@ def test_auto_video_probes_once_then_reuses_cached_fallback(
 
     provider = UnavailableProvider()
     monkeypatch.setattr(rmbg2_video, "get_provider", lambda _config: provider)
-    config = Config.from_env()
+    config = _auto_matting_config()
 
     first = rmbg2_video.matte_video(
         config,
@@ -214,7 +231,7 @@ def test_local_frame_io_failure_does_not_poison_rmbg_cache(
     _stub_video_io(monkeypatch)
     input_video = tmp_path / "input.mp4"
     input_video.write_bytes(b"video")
-    config = Config.from_env()
+    config = _auto_matting_config()
     monkeypatch.setattr(
         rmbg2_video,
         "_matte_frame",
@@ -248,7 +265,7 @@ def test_malformed_provider_image_is_cached_for_auto_fallback(
     _stub_video_io(monkeypatch)
     input_video = tmp_path / "input.mp4"
     input_video.write_bytes(b"video")
-    config = Config.from_env()
+    config = _auto_matting_config()
     provider = SimpleNamespace(
                 rmbg_matte=lambda *_args, **_kwargs: (
             b"not-a-png",
@@ -282,7 +299,7 @@ def test_provider_failure_is_remembered_independent_of_local_error_order(
     _stub_video_io(monkeypatch)
     input_video = tmp_path / "input.mp4"
     input_video.write_bytes(b"video")
-    config = Config.from_env()
+    config = _auto_matting_config()
 
     def mixed_matte(src, dst, **_kwargs):
         if src.name == "0001.png":
@@ -328,7 +345,7 @@ def test_auto_video_fallback_does_not_hide_auth_failure(
 
     with pytest.raises(ToolError) as exc_info:
         rmbg2_video.matte_video(
-            Config.from_env(),
+            _auto_matting_config(),
             input_video=input_video,
             output_dir=tmp_path / "matte",
             formats=["gif"],
@@ -394,7 +411,7 @@ def test_auto_video_color_key_fallback_fails_closed_on_invalid_plate(
 
     with pytest.raises(ToolError) as exc_info:
         rmbg2_video.matte_video(
-            Config.from_env(),
+            _auto_matting_config(),
             input_video=input_video,
             output_dir=tmp_path / "matte",
             formats=["gif"],

@@ -8,7 +8,6 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](gca-mcp/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)](scripts/preflight-requirements.toml)
 [![Phaser](https://img.shields.io/badge/Phaser-4-8A2BE2?style=flat-square)](https://phaser.io/)
-[![MCP Tools](https://img.shields.io/badge/MCP_tools-55-2563EB?style=flat-square)](gca-mcp/README.md#tools)
 [![License](https://img.shields.io/badge/license-Apache--2.0-22C55E?style=flat-square)](LICENSE)
 
 </div>
@@ -50,11 +49,10 @@ Requirements:
 - Claude Code with project MCP support;
 - an OpenAI API key for image generation and editing;
 - a Volcengine ARK API key for Seedance video generation and Doubao VLM;
-- an optional deployed [RMBG-2.0 matting service](services/README.md) for
-  soft-alpha edges. The default `assets.matting.backend: auto` falls back to
-  deterministic color-key matting during network, missing-route HTTP 404, or
-  HTTP 5xx outages and remembers one probe result per endpoint for the
-  lifetime of the MCP process.
+- no background-removal model: the default `assets.matting.backend: color_key`
+  mattes by pure computation against the generated staging background. An
+  optional [RMBG-2.0 matting service](services/README.md) can be opted into for
+  soft-alpha edges — see [Background removal](#background-removal).
 
 The current preflight checks provider credentials, the configured RMBG/color-key
 matting routes, browser, media, and filesystem dependencies required by the full pipeline.
@@ -99,15 +97,15 @@ ffmpeg -version
 ffprobe -version
 ```
 
-The global Playwright installation reflects the current runner loader. It is a
-known pre-release limitation; a reproducible release must replace it with a
-versioned local dependency.
+The verification runner loads Playwright from the global npm root, so Chromium
+must be installed globally as shown above. Pinning Playwright as a versioned
+project dependency is tracked as a future improvement.
 
 **Clone and install GCA**
 
 ```bash
-git clone https://github.com/harnessRL/gca.git
-cd gca
+git clone https://github.com/Tencent/Game-Creation-Agents.git
+cd Game-Creation-Agents
 
 cd gca-mcp
 uv sync --extra dev
@@ -128,7 +126,7 @@ uncommented placeholder:
 | Image generation | `OPENAI_API_KEY`, `GAME_ASSET_BASE_URL`, `GAME_ASSET_MODEL` | Generate and edit assets with the OpenAI Images API |
 | Seedance video | `ARK_API_KEY`, `SEEDANCE_URL`, `SEEDANCE_MODEL_STANDARD`, `SEEDANCE_MODEL_FAST` | Generate videos through Volcengine ARK |
 | Video understanding | `DOUBAO_API_ENDPOINT`, `DOUBAO_MODEL` | Route the pinned Doubao 2.0 model through ARK |
-| Background removal | `RMBG_BASE_URL`, optional `HF_TOKEN` | Connect to the [RMBG-2.0 matting service](services/README.md) for image and video matting. `HF_TOKEN` is only read when in-process matting downloads model weights from a gated Hugging Face repository |
+| Background removal *(optional)* | `RMBG_BASE_URL`, optional `HF_TOKEN` | Not required: matting defaults to the model-free `color_key` route. Only used after you opt into `assets.matting.backend: auto` or `rmbg2` — see [Background removal](#background-removal) |
 
 The OpenAI and ARK endpoints and model IDs in `.env.example` are provider
 defaults, so most users only need to supply their API keys. The VLM policy
@@ -148,21 +146,28 @@ verify phase of the pipeline. ARK keys are issued for the Volcengine
 
 Restart the MCP server after changing `.env`, since it is read at startup.
 
-### Background removal without a service
+### Background removal
 
-`RMBG_BASE_URL` is optional. Left empty, public mode mattes in-process with
-RMBG-2.0, which needs the extra:
+GCA mattes with `assets.matting.backend: color_key` by default — pure
+computation against the generated `#FF00FF` / `#00F000` staging background.
+It needs no model, no API, and no credentials, and it downloads nothing. This
+is the only route the project enables out of the box.
+
+Color-key matting leaves harder edges than a segmentation model. For
+soft-alpha edges you may opt into RMBG-2.0 by setting
+`assets.matting.backend` to `auto` or `rmbg2` in `gca.config.yaml`, and then
+either pointing `RMBG_BASE_URL` at your own deployment or installing the
+in-process extra:
 
 ```bash
 cd gca-mcp && uv sync --extra local-rmbg --extra dev
 ```
 
-Install this before the first asset run. `assets.matting.backend: auto` falls
-back to color-key for transient service faults only; a missing torch install is
-a dependency error and fails the call instead. The first matte downloads model
-weights (about 90s), then settles near 8s per image on Apple Silicon. To skip
-the dependency entirely, set `assets.matting.backend: color_key` in
-`gca.config.yaml` and accept hard edges.
+> [!IMPORTANT]
+> [RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0) is licensed under
+> **CC BY-NC 4.0 and prohibits commercial use**. GCA does not ship, bundle, or
+> download it by default — obtaining the model and complying with its license
+> terms is your responsibility. See [LICENSE](LICENSE).
 
 ## 🤖 3. Generate a game with Claude Code
 
@@ -266,8 +271,8 @@ GCA builds on the following core platforms:
 | Project | Role in GCA |
 |---|---|
 | [Claude Code](https://code.claude.com/docs) | Loads the game-pipeline Skill and coordinates the specialized agents |
-| [Phaser](https://phaser.io/) | Runs each generated game in the browser |
-| [RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0) | Removes backgrounds from generated images and animation frames |
+| [Phaser](https://phaser.io/) | Runs each generated game in the browser; its [Skills](https://github.com/phaserjs/phaser/tree/master/skills) (MIT) are bundled as the pipeline's Phaser references |
+| [RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0) | Optional, opt-in soft-alpha background removal (CC BY-NC 4.0; not bundled, not enabled by default) |
 
 We thank their maintainers and contributors for the foundations that make this
 pipeline possible. We also thank
@@ -278,10 +283,25 @@ reference for GCA.
 
 # ⚖️ License
 
-The Game-Creation-Agents pipeline is licensed under the
-[Apache License 2.0](LICENSE). This covers the repository source code, agent
-definitions, Skills, scripts, configuration, and documentation unless stated
-otherwise.
+Copyright (C) 2026 Tencent. All rights reserved.
+
+Game-Creation-Agents is licensed under the [Apache License 2.0](LICENSE),
+except for the third-party components identified in [LICENSE](LICENSE), which
+remain subject to their respective original license terms. This covers the
+repository source code, agent definitions, Skills, scripts, configuration, and
+documentation unless stated otherwise.
+
+The bundled Phaser reference Skills under
+`.claude/skills/game-pipeline/references/phaser/` are derived from
+[Phaser](https://github.com/phaserjs/phaser/tree/master/skills) and are licensed
+under the MIT License — see [LICENSE](LICENSE) for the full notice.
+
+GCA ships no model weights. Background removal defaults to the model-free
+`color_key` backend. [RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0) is an
+optional third-party model that is never bundled, downloaded, or enabled by
+default; it is licensed under **CC BY-NC 4.0 and prohibits commercial use**.
+Users who opt into `assets.matting.backend: auto` or `rmbg2` are responsible for
+obtaining that model and complying with its license.
 
 Third-party dependencies, supplied assets, and generated outputs remain subject
 to their respective licenses and usage terms.
@@ -295,6 +315,7 @@ If you find GCA helpful, please cite:
   title       = {{Game-Creation-Agents: Autonomous Game Production}},
   author      = {{Multimodal Reinforcement Learning Team, Tencent}},
   institution = {Tencent},
-  year        = {2026}
+  year        = {2026},
+  url         = {https://github.com/Tencent/Game-Creation-Agents}
 }
 ```

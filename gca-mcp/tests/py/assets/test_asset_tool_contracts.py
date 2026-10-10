@@ -73,8 +73,19 @@ def _ctx(tmp_path):
         _parent_fd=parent_fd,
     )
     weakref.finalize(workspace, _close_test_workspace, root_fd, parent_fd)
+    # These contracts exercise the RMBG route and its color-key fallback, so
+    # matting is opted into `auto` by name. The shipped default is the
+    # model-free `color_key` backend (see test_preflight_env.py).
+    config = Config.from_env()
+    config = replace(
+        config,
+        assets=replace(
+            config.assets,
+            matting=replace(config.assets.matting, backend="auto"),
+        ),
+    )
     return SimpleNamespace(
-        config=Config.from_env(),
+        config=config,
         state=SimpleNamespace(workspace=workspace),
         repo_root=tmp_path,
     )

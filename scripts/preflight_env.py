@@ -227,7 +227,7 @@ def _load_preflight_requirements(path: Path) -> dict[str, Any]:
 def _parse_matting_backend(path: Path) -> str:
     """Read assets.matting.backend without requiring a YAML dependency."""
     if not path.is_file():
-        return "rmbg2"
+        return "color_key"
     top_level = ""
     subsection = ""
     for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -248,8 +248,8 @@ def _parse_matting_backend(path: Path) -> str:
             and subsection == "matting"
             and key == "backend"
         ):
-            return value if value in {"auto", "rmbg2", "color_key"} else "rmbg2"
-    return "rmbg2"
+            return value if value in {"auto", "rmbg2", "color_key"} else "color_key"
+    return "color_key"
 
 
 def _discover_runner_scripts(root: Path) -> list[Path]:

@@ -841,14 +841,19 @@ class AssetVlmDefaults:
 class AssetMattingDefaults:
     """Which matting backend generated static and dynamic assets use.
 
+    ``color_key`` is the default: pure-computation safe-color matting that
+    needs no model and no API, so GCA downloads no model weights out of the box.
     ``auto`` prefers RMBG-2.0 and falls back to deterministic color-key matting
     for network, missing-route HTTP 404, or HTTP 5xx outages.
     ``rmbg2`` requires the RMBG-2.0 service (remote or local deployment).
-    ``color_key`` uses the pure-computation safe-color fallback for
-    environments with no RMBG-2.0 deployment.
+
+    ``auto`` and ``rmbg2`` load RMBG-2.0, which is licensed under CC BY-NC 4.0
+    and prohibits commercial use. Selecting either value is an explicit opt-in;
+    obtaining the model and complying with its license is the operator's
+    responsibility.
     """
 
-    backend: str = "auto"
+    backend: str = "color_key"
     color_key_threshold: int = 100
     color_key_edge_threshold: int = 150
 

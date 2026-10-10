@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Agent-native MCP server for Game Creative Agent (GCA): image/video generation, post-processing, and gameplay verification tools."
 readme = "README.md"
 authors = [
-    { name = "GCA", email = "noreply@example.com" }
+    { name = "GCA" }
 ]
 requires-python = ">=3.11"
 dependencies = [

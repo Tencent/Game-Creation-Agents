@@ -122,7 +122,7 @@ live server list; the tables below document the same registry by concern.
 |---|---|
 | `postprocess({command, …})` | CPU-only asset operations: `compose-preview` or `make-seamless`. Does not remove backgrounds or split grids. |
 | `rmbg2_matting` | Explicit single-image/background-removal path (RMBG-2.0, remote or local); returns a soft-alpha RGBA PNG. |
-| `color_key_matting` | Pure-computation `#FF00FF` / `#00F000` color-key path. The default `assets.matting.backend: auto` probes RMBG once per process route and remembers the result; network, missing-route HTTP 404, or HTTP 5xx outages select sticky static/video color-key fallback. |
+| `color_key_matting` | Pure-computation `#FF00FF` / `#00F000` color-key path, and the default `assets.matting.backend: color_key` — no model, no API, nothing downloaded. Opting into `assets.matting.backend: auto` probes RMBG once per process route and remembers the result; network, missing-route HTTP 404, or HTTP 5xx outages then select sticky static/video color-key fallback. |
 
 ### Video Understanding and Recording (3)
 
