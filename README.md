@@ -312,8 +312,8 @@ If you find GCA helpful, please cite:
 
 ```bibtex
 @techreport{gca2026,
-  title       = {{Game-Creation-Agents: Autonomous Game Production}},
-  author      = {{Multimodal Reinforcement Learning Team, Tencent}},
+  title       = {Game-Creation-Agents: Autonomous Game Production},
+  author      = {Tencent Multimodal RL Team: Xiangxin Zhou, Jiaqi Tang, Ke Ma, Wenhao Yang, Jiarui Yao, Boye Niu, Haiyang Guo, Yifei Zhao, Huanjin Yao, Pu Jian, Ruihuang Li, Haitao Wu, Yushi Huang, Xiangyan Liu, Yan Sun, Kaixin Li, Tianyu Pang},
   institution = {Tencent},
   year        = {2026},
   url         = {https://github.com/Tencent/Game-Creation-Agents}
