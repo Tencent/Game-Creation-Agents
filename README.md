@@ -15,10 +15,8 @@
 # 💡 Introduction
 
 Game-Creation-Agents (GCA) is an end-to-end pipeline that turns a
-natural-language idea into a playable, verified browser game. Claude
-Code coordinates specialized agents for design, authored levels, scaffolding,
-implementation, assets, integration, verification, and critique.
-The complete creation flow is:
+natural-language idea into a playable, verified browser game. 
+The creation flow is:
 
 <div align="center">
   <img src="figures/Loop.jpeg" alt="GCA pipeline from input and design through parallel build, verification, and release" width="100%">
