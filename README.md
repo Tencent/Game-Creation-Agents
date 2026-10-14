@@ -4,6 +4,7 @@
 
 ### 🎮 Specialized agents turn your game idea into a playable, verified experience.
 
+[![arXiv](https://img.shields.io/badge/arXiv-2610.16776-B31B1B?style=flat-square&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2610.16776)
 ![Status](https://img.shields.io/badge/status-public_preview-2563EB?style=flat-square)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](gca-mcp/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)](scripts/preflight-requirements.toml)
@@ -309,11 +310,13 @@ to their respective licenses and usage terms.
 If you find GCA helpful, please cite:
 
 ```bibtex
-@techreport{gca2026,
-  title       = {Game-Creation-Agents: Autonomous Game Production},
-  author      = {Tencent Multimodal RL Team: Xiangxin Zhou, Jiaqi Tang, Ke Ma, Wenhao Yang, Jiarui Yao, Boye Niu, Haiyang Guo, Yifei Zhao, Huanjin Yao, Pu Jian, Ruihuang Li, Haitao Wu, Yushi Huang, Xiangyan Liu, Yan Sun, Kaixin Li, Tianyu Pang},
-  institution = {Tencent},
-  year        = {2026},
-  url         = {https://github.com/Tencent/Game-Creation-Agents}
+@article{gca2026,
+  title         = {Game-Creation-Agents: Autonomous Game Production},
+  author        = {Tencent Multimodal RL Team: Xiangxin Zhou, Jiaqi Tang, Ke Ma, Wenhao Yang, Jiarui Yao, Boye Niu, Haiyang Guo, Yifei Zhao, Huanjin Yao, Pu Jian, Ruihuang Li, Haitao Wu, Yushi Huang, Xiangyan Liu, Yan Sun, Kaixin Li, Tianyu Pang},
+  journal       = {arXiv preprint arXiv:2610.16776},
+  year          = {2026},
+  eprint        = {2610.16776},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2610.16776}
 }
 ```
