@@ -312,7 +312,7 @@ If you find GCA helpful, please cite:
 ```bibtex
 @article{gca2026,
   title         = {Game-Creation-Agents: Autonomous Game Production},
-  author        = {Tencent Multimodal RL Team: Xiangxin Zhou, Jiaqi Tang, Ke Ma, Wenhao Yang, Jiarui Yao, Boye Niu, Haiyang Guo, Yifei Zhao, Huanjin Yao, Pu Jian, Ruihuang Li, Haitao Wu, Yushi Huang, Xiangyan Liu, Yan Sun, Kaixin Li, Tianyu Pang},
+  author        = {Xiangxin Zhou and Jiaqi Tang and Ke Ma and Wenhao Yang and Jiarui Yao and Boye Niu and Haiyang Guo and Yifei Zhao and Huanjin Yao and Pu Jian and Ruihuang Li and Haitao Wu and Yushi Huang and Xiangyan Liu and Yan Sun and Kaixin Li and Tianyu Pang},
   journal       = {arXiv preprint arXiv:2610.16776},
   year          = {2026},
   eprint        = {2610.16776},
