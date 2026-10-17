@@ -5,7 +5,6 @@
 ### 🎮 Specialized agents turn your game idea into a playable, verified experience.
 
 [![arXiv](https://img.shields.io/badge/arXiv-2610.16776-B31B1B?style=flat-square&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2610.16776)
-![Status](https://img.shields.io/badge/status-public_preview-2563EB?style=flat-square)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](gca-mcp/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)](scripts/preflight-requirements.toml)
 [![Phaser](https://img.shields.io/badge/Phaser-4-8A2BE2?style=flat-square)](https://phaser.io/)
